@@ -1,32 +1,14 @@
-// src/api/publicHttp.js
+// ✅ frontend/src/api/publicHttp.js
 import axios from "axios";
 
-const DEFAULT_BACKEND = "http://localhost:5000";
+// ✅ Base API URL from env
+const API = (import.meta.env.VITE_API_URL || "").trim().replace(/\/+$/, "");
 
-function normalizeBaseUrl(raw) {
-  let u = String(raw || "").trim();
-
-  // allow ":5000"
-  if (u.startsWith(":")) u = `http://localhost${u}`;
-
-  // allow "localhost:5000" or "127.0.0.1:5000"
-  if (/^(localhost|127\.0\.0\.1)(:\d+)?/i.test(u)) {
-    u = `http://${u}`;
-  }
-
-  // allow "example.com"
-  if (u && !/^https?:\/\//i.test(u)) {
-    u = `https://${u}`;
-  }
-
-  // fallback
-  if (!u) u = DEFAULT_BACKEND;
-
-  // remove trailing slashes
-  return u.replace(/\/+$/, "");
+if (!API) {
+  throw new Error("Missing VITE_API_URL. Add it in Netlify Environment Variables.");
 }
 
-export const ROOT_API = normalizeBaseUrl(import.meta.env.VITE_API_BASE);
+export const ROOT_API = API;
 
 const publicHttp = axios.create({
   baseURL: `${ROOT_API}/api`, // ✅ PUBLIC ROUTES ONLY

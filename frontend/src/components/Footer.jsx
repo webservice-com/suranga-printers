@@ -9,7 +9,7 @@ import {
   Phone,
 } from "lucide-react";
 
-const API = import.meta.env.VITE_API_URL || "http://localhost:5000";
+const API = (import.meta.env.VITE_API_URL || "").trim().replace(/\/+$/, "");
 
 const DEFAULT_SETTINGS = {
   shopName: "Suranga Printers",
@@ -39,6 +39,13 @@ export default function Footer() {
 
     (async () => {
       try {
+        // ✅ If env is missing, do not call localhost in production
+        if (!API) {
+          console.log("Footer: VITE_API_URL is missing");
+          if (!ignore) setLoaded(true);
+          return;
+        }
+
         const res = await fetch(`${API}/api/settings`);
         if (!res.ok) throw new Error(`Failed to load settings (${res.status})`);
         const data = await res.json();
@@ -83,10 +90,7 @@ export default function Footer() {
     [settings.whatsapp]
   );
 
-  // ✅ Social links from DB
   const SOCIAL_LINKS = settings.social || {};
-
-  // ✅ helper to show icon only if url exists
   const has = (url) => !!String(url || "").trim();
 
   return (
@@ -167,7 +171,6 @@ export default function Footer() {
                 )}
               </div>
 
-              {/* Optional website link */}
               {has(SOCIAL_LINKS.website) ? (
                 <div className="mt-3 text-sm">
                   <a
@@ -302,7 +305,6 @@ export default function Footer() {
             </div>
 
             <div className="mt-6 space-y-4">
-              {/* mini icon row */}
               <div className="flex items-center justify-center gap-3">
                 {has(SOCIAL_LINKS.facebook) && (
                   <a
@@ -365,98 +367,9 @@ export default function Footer() {
               {settings.shopName} – Fast Print
             </div>
             <div>{settings.address} • Matale District Delivery</div>
-
-            <div className="flex justify-center md:justify-start items-center gap-3 mt-3 md:hidden">
-              <span className="text-xs text-slate-500 font-medium">
-                Follow us:
-              </span>
-
-              {has(SOCIAL_LINKS.facebook) && (
-                <a
-                  href={SOCIAL_LINKS.facebook}
-                  aria-label="Facebook"
-                  className="text-blue-500 hover:text-blue-700"
-                >
-                  <Facebook className="w-4 h-4" />
-                </a>
-              )}
-
-              {has(SOCIAL_LINKS.instagram) && (
-                <a
-                  href={SOCIAL_LINKS.instagram}
-                  aria-label="Instagram"
-                  className="text-pink-500 hover:text-pink-700"
-                >
-                  <Instagram className="w-4 h-4" />
-                </a>
-              )}
-
-              {has(SOCIAL_LINKS.twitter) && (
-                <a
-                  href={SOCIAL_LINKS.twitter}
-                  aria-label="Twitter"
-                  className="text-sky-500 hover:text-sky-700"
-                >
-                  <Twitter className="w-4 h-4" />
-                </a>
-              )}
-            </div>
           </div>
 
           <div className="flex flex-col md:flex-row items-center gap-4">
-            <div className="hidden md:flex items-center gap-3">
-              <span className="text-xs text-slate-500 font-medium">
-                Connect with us:
-              </span>
-
-              <div className="flex items-center gap-2">
-                {has(SOCIAL_LINKS.facebook) && (
-                  <a
-                    href={SOCIAL_LINKS.facebook}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-500 hover:text-blue-700 transition-colors"
-                    aria-label="Facebook"
-                  >
-                    <Facebook className="w-4 h-4" />
-                  </a>
-                )}
-                {has(SOCIAL_LINKS.instagram) && (
-                  <a
-                    href={SOCIAL_LINKS.instagram}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-pink-500 hover:text-pink-700 transition-colors"
-                    aria-label="Instagram"
-                  >
-                    <Instagram className="w-4 h-4" />
-                  </a>
-                )}
-                {has(SOCIAL_LINKS.twitter) && (
-                  <a
-                    href={SOCIAL_LINKS.twitter}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-sky-500 hover:text-sky-700 transition-colors"
-                    aria-label="Twitter"
-                  >
-                    <Twitter className="w-4 h-4" />
-                  </a>
-                )}
-                {has(SOCIAL_LINKS.youtube) && (
-                  <a
-                    href={SOCIAL_LINKS.youtube}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-red-500 hover:text-red-700 transition-colors"
-                    aria-label="YouTube"
-                  >
-                    <Youtube className="w-4 h-4" />
-                  </a>
-                )}
-              </div>
-            </div>
-
             <div className="text-slate-500 text-sm font-medium px-3 py-1.5 rounded-full bg-gradient-to-r from-red-50 to-amber-50">
               © {currentYear} {settings.shopName}. All rights reserved.
             </div>

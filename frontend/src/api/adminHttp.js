@@ -1,40 +1,28 @@
 // ✅ frontend/src/api/adminHttp.js
 import axios from "axios";
 
-// If your env is empty => default localhost backend
-const DEFAULT_BACKEND = "http://localhost:5000";
-
 // ✅ single token key everywhere (keep legacy support optional)
 export const TOKEN_KEY = "sp_admin_token";
 const LEGACY_TOKEN_KEY = "admin_token";
 
-function normalizeBaseUrl(raw) {
-  let u = String(raw || "").trim();
+// ✅ Base API URL must come from env on Netlify
+// In local dev you can set it in frontend/.env
+// VITE_API_URL=http://localhost:5000
+const API = (import.meta.env.VITE_API_URL || "").trim().replace(/\/+$/, "");
 
-  // allow formats like ":5000"
-  if (u.startsWith(":")) u = `http://localhost${u}`;
-
-  // allow formats like "localhost:5000" or "127.0.0.1:5000"
-  if (/^(localhost|127\.0\.0\.1)(:\d+)?/i.test(u)) u = `http://${u}`;
-
-  // if user puts only domain "example.com" -> https://example.com
-  if (u && !/^https?:\/\//i.test(u)) u = `https://${u}`;
-
-  // fallback
-  if (!u) u = DEFAULT_BACKEND;
-
-  // remove trailing slashes
-  return u.replace(/\/+$/, "");
+if (!API) {
+  // This will make the error obvious instead of silently calling localhost
+  throw new Error("Missing VITE_API_URL. Add it in Netlify Environment Variables.");
 }
 
-export const ROOT_API = normalizeBaseUrl(import.meta.env.VITE_API_BASE);
-
-// ✅ Admin base (IMPORTANT)
+// ✅ Admin base
+export const ROOT_API = API;
 export const ADMIN_API_BASE = `${ROOT_API}/api/admin`;
 
 const adminHttp = axios.create({
   baseURL: ADMIN_API_BASE,
   timeout: 30000,
+  withCredentials: true, // keep true if you ever use cookies; safe even with JWT
 });
 
 // ✅ request interceptor: attach token
@@ -48,8 +36,7 @@ adminHttp.interceptors.request.use(
       config.headers.Authorization = `Bearer ${token}`;
     }
 
-    // ✅ DO NOT force Content-Type globally
-    // If request body is FormData, axios will set proper boundary automatically.
+    // ✅ DO NOT force Content-Type globally (FormData needs boundary)
     return config;
   },
   (error) => Promise.reject(error)
@@ -64,8 +51,7 @@ adminHttp.interceptors.response.use(
     if (status === 401) {
       localStorage.removeItem(TOKEN_KEY);
       localStorage.removeItem(LEGACY_TOKEN_KEY);
-
-      // Optional: if you want auto redirect from anywhere:
+      // Optional redirect:
       // window.location.href = "/admin/login";
     }
 
