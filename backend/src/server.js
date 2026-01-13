@@ -41,6 +41,8 @@ const allowedOrigins = new Set([
 ]);
 
 // Add FRONTEND_URL from Render env (comma separated)
+// Example:
+// FRONTEND_URL=https://your-site.netlify.app,https://deploy-preview-12--your-site.netlify.app
 if (process.env.FRONTEND_URL) {
   process.env.FRONTEND_URL
     .split(",")
@@ -49,12 +51,13 @@ if (process.env.FRONTEND_URL) {
     .forEach((x) => allowedOrigins.add(x));
 }
 
-// Allow Netlify previews automatically
 function isAllowedOrigin(origin) {
   if (!origin) return true; // Postman / server-to-server
 
+  // Exact match (local + your main Netlify URLs)
   if (allowedOrigins.has(origin)) return true;
 
+  // Allow Netlify previews automatically (*.netlify.app) - HTTPS only
   try {
     const { hostname, protocol } = new URL(origin);
     return protocol === "https:" && hostname.endsWith(".netlify.app");
@@ -63,19 +66,20 @@ function isAllowedOrigin(origin) {
   }
 }
 
-app.use(
-  cors({
-    origin: (origin, cb) =>
-      isAllowedOrigin(origin)
-        ? cb(null, true)
-        : cb(new Error(`CORS blocked: ${origin}`)),
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-  })
-);
+const corsConfig = cors({
+  origin: (origin, cb) => {
+    if (isAllowedOrigin(origin)) return cb(null, true);
+    return cb(new Error(`CORS blocked: ${origin}`));
+  },
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+});
 
-app.options("*", cors());
+app.use(corsConfig);
+
+// ✅ IMPORTANT FIX (Render crash): do NOT use "*"
+app.options(/.*/, corsConfig);
 
 /* ======================================================
    STATIC FILES
@@ -177,15 +181,14 @@ async function start() {
 
     try {
       await seedServices();
-    } catch {
-      console.log("⚠️ Service seeding skipped");
+    } catch (e) {
+      console.log("⚠️ Service seeding skipped:", e?.message || "unknown");
     }
 
     const PORT = process.env.PORT || 5000;
     app.listen(PORT, () => {
-      console.log("🚀 Server running");
-      console.log("🌍 Port:", PORT);
-      console.log("🌐 Frontend:", process.env.FRONTEND_URL || "local only");
+      console.log("🚀 Server running on port:", PORT);
+      console.log("🌐 FRONTEND_URL:", process.env.FRONTEND_URL || "local only");
     });
   } catch (err) {
     console.error("❌ Startup failed:", err.message);
