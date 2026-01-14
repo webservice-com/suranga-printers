@@ -13,6 +13,9 @@ export default function Quote() {
   const [err, setErr] = useState("");
   const [okMsg, setOkMsg] = useState("");
 
+  // ✅ (A) ADD THIS STATE (success popup)
+  const [showSuccessPopup, setShowSuccessPopup] = useState(false);
+
   // form fields
   const [customerName, setCustomerName] = useState("");
   const [phone, setPhone] = useState("");
@@ -77,7 +80,8 @@ export default function Quote() {
     if (!phone.trim()) return "Please enter your phone number.";
     if (!serviceName.trim()) return "Please select a service.";
     if (Number(quantity) <= 0) return "Quantity must be at least 1.";
-    if (fulfillment === "Delivery" && !deliveryArea) return "Please select a delivery area.";
+    if (fulfillment === "Delivery" && !deliveryArea)
+      return "Please select a delivery area.";
     return "";
   };
 
@@ -109,7 +113,10 @@ export default function Quote() {
 
       fd.append("fulfillment", fulfillment);
       fd.append("deliveryArea", fulfillment === "Delivery" ? deliveryArea : "");
-      fd.append("deliveryFeeLkr", String(fulfillment === "Delivery" ? deliveryFeeLkr : 0));
+      fd.append(
+        "deliveryFeeLkr",
+        String(fulfillment === "Delivery" ? deliveryFeeLkr : 0)
+      );
 
       files.forEach((f) => fd.append("files", f));
 
@@ -118,7 +125,15 @@ export default function Quote() {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
-      setOkMsg(`✅ Quote request sent successfully. Reference ID: ${data?.id || "N/A"}`);
+      setOkMsg(
+        `✅ Quote request sent successfully. Reference ID: ${
+          data?.id || "N/A"
+        }`
+      );
+
+      // ✅ (B) SHOW POPUP ON SUCCESS (auto hide after 3.5s)
+      setShowSuccessPopup(true);
+      setTimeout(() => setShowSuccessPopup(false), 3500);
 
       // reset some fields
       setSize("");
@@ -139,6 +154,30 @@ export default function Quote() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-amber-50/20 via-white to-red-50/10">
       <div className="container-pad py-12 md:py-16 relative">
+        {/* ✅ (C) EXACT LOCATION: PUT POPUP RIGHT HERE (inside container, top) */}
+        {showSuccessPopup && (
+          <div className="fixed top-6 right-6 z-[9999]">
+            <div className="border border-emerald-200/50 rounded-2xl bg-gradient-to-r from-emerald-50/95 to-green-50/95 text-emerald-800 px-5 py-4 shadow-2xl backdrop-blur-sm animate-[fadeIn_.25s_ease-out]">
+              <div className="font-bold flex items-center gap-2">
+                <span>✅</span>
+                <span>Quote sent successfully!</span>
+              </div>
+
+              <div className="text-sm mt-1">
+                {okMsg || "We’ll contact you soon."}
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setShowSuccessPopup(false)}
+                className="mt-3 text-xs font-semibold px-3 py-1.5 rounded-full bg-white/70 border border-emerald-200 hover:bg-white transition"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        )}
+
         <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-red-100/20 to-amber-100/20 rounded-full blur-3xl -z-10"></div>
         <div className="absolute bottom-0 left-0 w-80 h-80 bg-gradient-to-br from-amber-100/20 to-yellow-100/20 rounded-full blur-3xl -z-10"></div>
 
@@ -157,7 +196,8 @@ export default function Quote() {
             </h1>
 
             <p className="text-lg text-slate-600 leading-relaxed">
-              Send your requirements. We'll reply with competitive pricing and clear timelines via WhatsApp or call.
+              Send your requirements. We'll reply with competitive pricing and clear
+              timelines via WhatsApp or call.
             </p>
           </div>
 
@@ -181,7 +221,9 @@ export default function Quote() {
                     <div className="flex items-center justify-between">
                       <div>
                         <h2 className="text-2xl font-bold text-slate-900">Quote Details</h2>
-                        <p className="text-slate-600 text-sm mt-1">Fill in your printing requirements</p>
+                        <p className="text-slate-600 text-sm mt-1">
+                          Fill in your printing requirements
+                        </p>
                       </div>
                       <div className="text-xs font-semibold px-3 py-1.5 rounded-full bg-gradient-to-r from-red-100 to-amber-100 text-red-800">
                         Required *
@@ -375,7 +417,9 @@ export default function Quote() {
                       <label className="text-sm font-semibold text-slate-900 mb-3 block">
                         Upload Files (Optional)
                       </label>
-                      <div className="text-sm text-slate-600 mb-4">PDF/JPG/PNG/ZIP (max 5 files)</div>
+                      <div className="text-sm text-slate-600 mb-4">
+                        PDF/JPG/PNG/ZIP (max 5 files)
+                      </div>
                       <div className="relative border-2 border-dashed border-red-200/50 rounded-2xl p-6 text-center hover:border-red-300/50 transition-colors duration-300">
                         <input
                           type="file"
@@ -388,7 +432,7 @@ export default function Quote() {
                         <div className="font-medium text-slate-900">Click to upload files</div>
                         <div className="text-sm text-slate-600 mt-1">or drag and drop</div>
                       </div>
-                    </div> 
+                    </div>
                   </div>
 
                   <div className="border-t border-red-200/50 bg-gradient-to-r from-white to-red-50/20 p-6">
@@ -397,7 +441,9 @@ export default function Quote() {
                         {fulfillment === "Delivery" ? (
                           <div className="flex items-center gap-2">
                             <span>Estimated delivery fee:</span>
-                            <span className="font-bold text-lg text-slate-900">LKR {deliveryFeeLkr}</span>
+                            <span className="font-bold text-lg text-slate-900">
+                              LKR {deliveryFeeLkr}
+                            </span>
                           </div>
                         ) : (
                           <div className="flex items-center gap-2">
@@ -432,7 +478,9 @@ export default function Quote() {
               <aside className="space-y-8">
                 <div className="border border-red-200/50 rounded-3xl bg-gradient-to-br from-red-50/50 to-amber-50/30 shadow-xl overflow-hidden">
                   <div className="p-6 md:p-8">
-                    <div className="font-bold text-lg text-slate-900 mb-4">Need Fast Help?</div>
+                    <div className="font-bold text-lg text-slate-900 mb-4">
+                      Need Fast Help?
+                    </div>
                     <div className="space-y-3">
                       <a
                         href={`https://wa.me/${WHATSAPP}`}
@@ -474,3 +522,11 @@ function Field({ label, children, required }) {
     </div>
   );
 }
+
+/*
+✅ (D) OPTIONAL (recommended) - add this to your global CSS file (e.g. index.css)
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+*/
