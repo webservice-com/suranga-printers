@@ -1,3 +1,4 @@
+// backend/src/controllers/public.controller.js
 const Service = require("../models/Service");
 const DeliveryArea = require("../models/DeliveryArea");
 const QuoteRequest = require("../models/QuoteRequest");
@@ -5,7 +6,7 @@ const Review = require("../models/Review");
 const PortfolioItem = require("../models/PortfolioItem");
 const Settings = require("../models/Settings");
 
-const { uploadBufferToCloudinary } = require("../utils/cloudinaryUpload");
+const { uploadBuffer } = require("../config/cloudinary");
 
 async function getOrCreateSettings() {
   let s = await Settings.findOne();
@@ -68,10 +69,10 @@ exports.createQuote = async (req, res) => {
     for (const f of incoming) {
       const isPdf = f.mimetype === "application/pdf";
 
-      const result = await uploadBufferToCloudinary(f.buffer, {
+      const result = await uploadBuffer({
+        buffer: f.buffer,
         folder: "quotes",
-        resource_type: isPdf ? "raw" : "image",
-        public_id: undefined,
+        resourceType: isPdf ? "raw" : "image",
       });
 
       uploadedFiles.push({

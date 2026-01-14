@@ -180,9 +180,8 @@ export default function QuotesAdmin() {
 
   return (
     <div
-      className={`transition-all duration-700 ${
-        isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
-      }`}
+      className={`transition-all duration-700 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+        }`}
     >
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-6">
@@ -204,11 +203,10 @@ export default function QuotesAdmin() {
             className="group px-4 py-2.5 rounded-xl border-2 border-slate-200 font-semibold hover:bg-slate-50 hover:border-slate-300 transition-all duration-300 flex items-center gap-2 disabled:opacity-60"
           >
             <RefreshCw
-              className={`w-4 h-4 ${
-                isRefreshing
+              className={`w-4 h-4 ${isRefreshing
                   ? "animate-spin"
                   : "group-hover:rotate-180 transition-transform duration-500"
-              }`}
+                }`}
             />
             {isRefreshing ? "Refreshing..." : "Refresh"}
           </button>
@@ -389,9 +387,8 @@ export default function QuotesAdmin() {
 
               {/* Collapsible Content */}
               <div
-                className={`${
-                  expandedId === q._id ? "block" : "hidden"
-                } p-5 space-y-5 animate-fade-in`}
+                className={`${expandedId === q._id ? "block" : "hidden"
+                  } p-5 space-y-5 animate-fade-in`}
               >
                 {/* Status Update Section */}
                 <div>
@@ -403,11 +400,10 @@ export default function QuotesAdmin() {
                       <button
                         key={s}
                         onClick={() => updateStatus(q._id, s)}
-                        className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
-                          q.status === s
+                        className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${q.status === s
                             ? "bg-red-600 text-white shadow-sm"
                             : "border border-slate-200 hover:bg-slate-50 text-slate-700"
-                        }`}
+                          }`}
                       >
                         {s}
                       </button>
@@ -554,24 +550,30 @@ export default function QuotesAdmin() {
 
                 {/* Files */}
                 <div>
-                  <h3 className="text-sm font-semibold text-slate-900 mb-3">
-                    Files
-                  </h3>
+                  <h3 className="text-sm font-semibold text-slate-900 mb-3">Files</h3>
+
                   {q.files && q.files.length ? (
                     <div className="flex flex-wrap gap-2">
                       {q.files.map((f, idx) => {
-                        const href = resolveFileUrl(f.path);
+                        // ✅ QuoteRequest stores Cloudinary URLs in f.url
+                        const href = resolveFileUrl(f.url);
+
+                        const label =
+                          f.originalName ||
+                          (f.mimetype === "application/pdf" ? `PDF ${idx + 1}` : `File ${idx + 1}`);
+
                         return (
                           <a
-                            key={idx}
+                            key={f.publicId || idx}
                             href={href}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="group flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors"
+                            title={label}
                           >
                             <FileText className="w-4 h-4 text-slate-500 group-hover:text-red-600" />
                             <span className="text-sm font-medium text-slate-700 group-hover:text-slate-900">
-                              {f.filename}
+                              {label}
                             </span>
                             <Eye className="w-4 h-4 text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity" />
                           </a>
@@ -582,6 +584,8 @@ export default function QuotesAdmin() {
                     <div className="text-sm text-slate-500 italic">No files uploaded.</div>
                   )}
                 </div>
+
+
               </div>
             </div>
           ))}

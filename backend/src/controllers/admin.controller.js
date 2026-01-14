@@ -1,3 +1,4 @@
+// backend/src/controllers/admin.controller.js
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const mongoose = require("mongoose");
@@ -10,8 +11,8 @@ const Review = require("../models/Review");
 const PortfolioItem = require("../models/PortfolioItem");
 const Settings = require("../models/Settings");
 
-const cloudinary = require("../config/cloudinary");
-const { uploadBufferToCloudinary } = require("../utils/cloudinaryUpload");
+// ✅ IMPORTANT: match your fixed cloudinary export
+const { cloudinary, uploadBuffer } = require("../config/cloudinary");
 
 const isValidId = (id) => mongoose.Types.ObjectId.isValid(id);
 
@@ -259,13 +260,15 @@ exports.adminCreatePortfolio = async (req, res) => {
     const { title, category, tag, description, featured, active } = req.body || {};
     if (!toStr(title)) return res.status(400).json({ message: "Title is required" });
 
-    // ✅ IMPORTANT: req.file.buffer must exist (multer memoryStorage)
     if (!req.file || !req.file.buffer || req.file.size === 0) {
       return res.status(400).json({ message: "Empty file (image is required)" });
     }
 
-    const uploaded = await uploadBufferToCloudinary(req.file.buffer, {
+    // ✅ use helper that uploads a buffer
+    const uploaded = await uploadBuffer({
+      buffer: req.file.buffer,
       folder: "portfolio",
+      resourceType: "image",
     });
 
     const doc = await PortfolioItem.create({
@@ -299,26 +302,26 @@ exports.adminUpdatePortfolio = async (req, res) => {
     if (category !== undefined) item.category = toStr(category) || "General";
     if (tag !== undefined) item.tag = toStr(tag);
     if (description !== undefined) item.description = toStr(description);
-
     if (featured !== undefined) item.featured = toBool(featured, item.featured);
     if (active !== undefined) item.active = toBool(active, item.active);
 
     if (req.file) {
-      // ✅ IMPORTANT
       if (!req.file.buffer || req.file.size === 0) {
         return res.status(400).json({ message: "Empty file" });
       }
 
       if (item.imagePublicId) {
         try {
-          await cloudinary.uploader.destroy(item.imagePublicId);
+          await cloudinary.uploader.destroy(item.imagePublicId, { resource_type: "image" });
         } catch (err) {
           console.warn("Failed to delete old image from Cloudinary:", err.message);
         }
       }
 
-      const uploaded = await uploadBufferToCloudinary(req.file.buffer, {
+      const uploaded = await uploadBuffer({
+        buffer: req.file.buffer,
         folder: "portfolio",
+        resourceType: "image",
       });
 
       item.imageUrl = uploaded.secure_url;
@@ -342,7 +345,7 @@ exports.adminDeletePortfolio = async (req, res) => {
 
     if (doc.imagePublicId) {
       try {
-        await cloudinary.uploader.destroy(doc.imagePublicId);
+        await cloudinary.uploader.destroy(doc.imagePublicId, { resource_type: "image" });
       } catch (err) {
         console.warn("Failed to delete image from Cloudinary:", err.message);
       }
