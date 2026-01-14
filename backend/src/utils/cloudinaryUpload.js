@@ -1,19 +1,18 @@
 // backend/src/utils/cloudinaryUpload.js
-const cloudinary = require("../config/cloudinary");
+const { cloudinary } = require("../config/cloudinary");
 
 /**
  * Uploads a file buffer to Cloudinary.
- * - Default: image upload (portfolio style optimization)
- * - Supports PDFs/other files by passing: { resource_type: "raw", folder: "quotes" }
+ * - Default image upload with optimization transformations
+ * - Use { resource_type: "raw" } for PDFs/docs
  */
 function uploadBufferToCloudinary(buffer, options = {}) {
   const resourceType = options.resource_type || "image";
 
-  // ✅ Only apply transformations for images
   const transformation =
     resourceType === "image"
       ? [
-          { width: 1400, height: 1400, crop: "limit" }, // limit huge images, keep quality
+          { width: 1400, height: 1400, crop: "limit" },
           { quality: "auto" },
           { fetch_format: "auto" },
         ]
@@ -23,9 +22,9 @@ function uploadBufferToCloudinary(buffer, options = {}) {
     const stream = cloudinary.uploader.upload_stream(
       {
         folder: options.folder || "uploads",
-        resource_type: resourceType, // "image" | "raw" | "video"
+        resource_type: resourceType,
         transformation,
-        ...options, // allow overriding anything (public_id, tags, etc.)
+        ...options,
       },
       (error, result) => {
         if (error) return reject(error);

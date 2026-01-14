@@ -67,12 +67,14 @@ exports.createQuote = async (req, res) => {
     const incoming = req.files || [];
 
     for (const f of incoming) {
-      const isPdf = f.mimetype === "application/pdf";
+      // ✅ FIX: only image/* goes as image, everything else goes as raw
+      const isImage = typeof f.mimetype === "string" && f.mimetype.startsWith("image/");
+      const resourceType = isImage ? "image" : "raw";
 
       const result = await uploadBuffer({
         buffer: f.buffer,
         folder: "quotes",
-        resourceType: isPdf ? "raw" : "image",
+        resourceType,
       });
 
       uploadedFiles.push({
@@ -81,6 +83,7 @@ exports.createQuote = async (req, res) => {
         publicId: result.public_id,
         mimetype: f.mimetype,
         size: f.size,
+        resourceType, // helpful for frontend
       });
     }
 
