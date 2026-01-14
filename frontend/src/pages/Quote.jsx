@@ -371,7 +371,7 @@ export default function Quote() {
                       />
                     </div>
 
-                    {/* <div className="border border-red-200/50 rounded-2xl p-5 bg-gradient-to-r from-red-50/30 to-amber-50/30">
+                    <div className="border border-red-200/50 rounded-2xl p-5 bg-gradient-to-r from-red-50/30 to-amber-50/30">
                       <label className="text-sm font-semibold text-slate-900 mb-3 block">
                         Upload Files (Optional)
                       </label>
@@ -388,7 +388,7 @@ export default function Quote() {
                         <div className="font-medium text-slate-900">Click to upload files</div>
                         <div className="text-sm text-slate-600 mt-1">or drag and drop</div>
                       </div>
-                    </div> */}
+                    </div> 
                   </div>
 
                   <div className="border-t border-red-200/50 bg-gradient-to-r from-white to-red-50/20 p-6">
