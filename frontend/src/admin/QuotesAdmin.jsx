@@ -60,7 +60,6 @@ export default function QuotesAdmin() {
     else setLoading(true);
 
     try {
-      // ✅ FIXED: adminHttp baseURL already = /api/admin
       const url =
         status === "All"
           ? "/quotes"
@@ -84,7 +83,6 @@ export default function QuotesAdmin() {
 
   const update = async (id, patch) => {
     try {
-      // ✅ FIXED: no /api/admin here
       const { data } = await adminHttp.patch(`/quotes/${id}`, patch);
       setItems((prev) => prev.map((x) => (x._id === id ? data : x)));
       return true;
@@ -180,8 +178,9 @@ export default function QuotesAdmin() {
 
   return (
     <div
-      className={`transition-all duration-700 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
-        }`}
+      className={`transition-all duration-700 ${
+        isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+      }`}
     >
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-6">
@@ -203,15 +202,15 @@ export default function QuotesAdmin() {
             className="group px-4 py-2.5 rounded-xl border-2 border-slate-200 font-semibold hover:bg-slate-50 hover:border-slate-300 transition-all duration-300 flex items-center gap-2 disabled:opacity-60"
           >
             <RefreshCw
-              className={`w-4 h-4 ${isRefreshing
+              className={`w-4 h-4 ${
+                isRefreshing
                   ? "animate-spin"
                   : "group-hover:rotate-180 transition-transform duration-500"
-                }`}
+              }`}
             />
             {isRefreshing ? "Refreshing..." : "Refresh"}
           </button>
 
-          {/* optional: export - leave as UI only */}
           <button className="px-4 py-2.5 rounded-xl bg-red-600 text-white font-semibold hover:bg-red-700 transition-colors flex items-center gap-2">
             <Download className="w-4 h-4" />
             Export
@@ -280,9 +279,7 @@ export default function QuotesAdmin() {
             <RefreshCw className="w-8 h-8 animate-spin" />
           </div>
           <h3 className="text-xl font-bold text-slate-900">Loading Quotes...</h3>
-          <p className="text-slate-600 mt-2">
-            Fetching your orders and quotes data
-          </p>
+          <p className="text-slate-600 mt-2">Fetching your orders and quotes data</p>
         </div>
       ) : (
         <div className="space-y-4">
@@ -346,9 +343,7 @@ export default function QuotesAdmin() {
 
                   <div className="flex items-center gap-2">
                     <button
-                      onClick={() =>
-                        setExpandedId(expandedId === q._id ? null : q._id)
-                      }
+                      onClick={() => setExpandedId(expandedId === q._id ? null : q._id)}
                       className="p-2 rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors flex items-center gap-2"
                     >
                       {expandedId === q._id ? (
@@ -387,8 +382,7 @@ export default function QuotesAdmin() {
 
               {/* Collapsible Content */}
               <div
-                className={`${expandedId === q._id ? "block" : "hidden"
-                  } p-5 space-y-5 animate-fade-in`}
+                className={`${expandedId === q._id ? "block" : "hidden"} p-5 space-y-5 animate-fade-in`}
               >
                 {/* Status Update Section */}
                 <div>
@@ -400,10 +394,11 @@ export default function QuotesAdmin() {
                       <button
                         key={s}
                         onClick={() => updateStatus(q._id, s)}
-                        className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${q.status === s
+                        className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                          q.status === s
                             ? "bg-red-600 text-white shadow-sm"
                             : "border border-slate-200 hover:bg-slate-50 text-slate-700"
-                          }`}
+                        }`}
                       >
                         {s}
                       </button>
@@ -450,9 +445,7 @@ export default function QuotesAdmin() {
                         {q.fulfillment === "Delivery" && Number(q.deliveryFeeLkr) > 0 && (
                           <div className="flex items-center gap-2">
                             <DollarSign className="w-4 h-4 text-slate-500" />
-                            <span>
-                              Fee: LKR {Number(q.deliveryFeeLkr).toLocaleString()}
-                            </span>
+                            <span>Fee: LKR {Number(q.deliveryFeeLkr).toLocaleString()}</span>
                           </div>
                         )}
                       </div>
@@ -549,18 +542,19 @@ export default function QuotesAdmin() {
                 </div>
 
                 {/* Files */}
-                <div>
+                <div onClick={(e) => e.stopPropagation()}>
                   <h3 className="text-sm font-semibold text-slate-900 mb-3">Files</h3>
 
                   {q.files && q.files.length ? (
                     <div className="flex flex-wrap gap-2">
                       {q.files.map((f, idx) => {
-                        // ✅ QuoteRequest stores Cloudinary URLs in f.url
                         const href = resolveFileUrl(f.url);
 
                         const label =
                           f.originalName ||
-                          (f.mimetype === "application/pdf" ? `PDF ${idx + 1}` : `File ${idx + 1}`);
+                          (f.mimetype === "application/pdf"
+                            ? `PDF ${idx + 1}`
+                            : `File ${idx + 1}`);
 
                         return (
                           <a
@@ -568,6 +562,7 @@ export default function QuotesAdmin() {
                             href={href}
                             target="_blank"
                             rel="noopener noreferrer"
+                            onClick={(e) => e.stopPropagation()} // ✅ KEY FIX
                             className="group flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors"
                             title={label}
                           >
@@ -584,8 +579,6 @@ export default function QuotesAdmin() {
                     <div className="text-sm text-slate-500 italic">No files uploaded.</div>
                   )}
                 </div>
-
-
               </div>
             </div>
           ))}
@@ -635,7 +628,9 @@ function StatCard({ title, value, color }) {
 
   return (
     <div className="border border-slate-200 rounded-xl bg-white p-3 text-center hover:shadow-sm transition-shadow duration-300">
-      <div className={`text-xs font-medium px-2 py-1 rounded-full ${colorClasses[color]} mb-2`}>
+      <div
+        className={`text-xs font-medium px-2 py-1 rounded-full ${colorClasses[color]} mb-2`}
+      >
         {title}
       </div>
       <div className="text-2xl font-bold text-slate-900">{value}</div>

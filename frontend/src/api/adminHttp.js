@@ -1,31 +1,43 @@
 // ✅ frontend/src/api/adminHttp.js
 import axios from "axios";
 
-// ✅ single token key everywhere (keep legacy support optional)
+// ✅ token keys
 export const TOKEN_KEY = "sp_admin_token";
 const LEGACY_TOKEN_KEY = "admin_token";
 
-// ✅ Base API URL must come from env on Netlify
-// In local dev you can set it in frontend/.env
-// VITE_API_URL=http://localhost:5000
-const API = (import.meta.env.VITE_API_URL || "").trim().replace(/\/+$/, "");
+// ✅ Read API base from env (Netlify / local .env)
+// Examples:
+//   VITE_API_URL=http://localhost:5000
+//   VITE_API_URL=https://your-backend.onrender.com
+const rawAPI = (import.meta.env.VITE_API_URL || "").trim();
+const ROOT_API = rawAPI.replace(/\/+$/, ""); // remove trailing slashes
 
-if (!API) {
-  // This will make the error obvious instead of silently calling localhost
-  throw new Error("Missing VITE_API_URL. Add it in Netlify Environment Variables.");
+// ✅ If missing, DO NOT throw (throw breaks production build).
+// Instead log a very clear error and fallback to same-origin.
+// (Same-origin works only if frontend + backend are served from same domain.)
+if (!ROOT_API) {
+  // eslint-disable-next-line no-console
+  console.error(
+    "❌ Missing VITE_API_URL. Add it in Netlify Environment Variables (or frontend/.env for local dev). " +
+      "Fallbacking to same-origin ''."
+  );
 }
 
-// ✅ Admin base
-export const ROOT_API = API;
-export const ADMIN_API_BASE = `${ROOT_API}/api/admin`;
+// ✅ Export ROOT_API for link building
+export { ROOT_API };
+
+// ✅ Admin API base
+export const ADMIN_API_BASE = `${ROOT_API || ""}/api/admin`;
 
 const adminHttp = axios.create({
   baseURL: ADMIN_API_BASE,
   timeout: 30000,
-  withCredentials: true, // keep true if you ever use cookies; safe even with JWT
+  // ✅ If you are using JWT in Authorization header, you usually want false.
+  // Set true ONLY if you are using cookies/sessions.
+  withCredentials: false,
 });
 
-// ✅ request interceptor: attach token
+// ✅ Attach token to every request
 adminHttp.interceptors.request.use(
   (config) => {
     const token =
@@ -36,13 +48,13 @@ adminHttp.interceptors.request.use(
       config.headers.Authorization = `Bearer ${token}`;
     }
 
-    // ✅ DO NOT force Content-Type globally (FormData needs boundary)
+    // ✅ Do NOT set Content-Type globally (FormData needs boundary)
     return config;
   },
   (error) => Promise.reject(error)
 );
 
-// ✅ response interceptor: handle 401
+// ✅ Handle auth errors
 adminHttp.interceptors.response.use(
   (res) => res,
   (error) => {
@@ -51,6 +63,7 @@ adminHttp.interceptors.response.use(
     if (status === 401) {
       localStorage.removeItem(TOKEN_KEY);
       localStorage.removeItem(LEGACY_TOKEN_KEY);
+
       // Optional redirect:
       // window.location.href = "/admin/login";
     }
