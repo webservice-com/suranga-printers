@@ -30,15 +30,15 @@ const portfolioUpload = multer({
 const uploadPortfolioImage = portfolioUpload.single("image");
 
 /* ======================================================
-   2) SERVICES (Hero Image - Cloudinary) -> memoryStorage (buffer)
-   ✅ Same as portfolio
+   2) SERVICES (Cloudinary) -> memoryStorage (buffer)
+   ✅ NEW: used by admin routes for service hero images
 ====================================================== */
 const serviceUpload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
   fileFilter: makeAllowedFilter(
-    ["image/jpeg", "image/png", "image/webp", "image/gif", "image/svg+xml"],
-    "Only JPG, PNG, WebP, GIF, SVG images are allowed."
+    ["image/jpeg", "image/png", "image/webp", "image/gif"],
+    "Only JPG, PNG, WebP, GIF images are allowed."
   ),
 });
 
@@ -46,14 +46,13 @@ const serviceUpload = multer({
 const uploadServiceImage = serviceUpload.single("image");
 
 /* ======================================================
-   3) QUOTES (Cloudinary files: images + pdf + docs) -> memoryStorage (buffer)
-   ✅ Must be memoryStorage because your controller uses f.buffer
+   3) QUOTES (Cloudinary files) -> memoryStorage (buffer)
 ====================================================== */
 const quoteUpload = multer({
   storage: multer.memoryStorage(),
   limits: {
     fileSize: 15 * 1024 * 1024, // 15MB each file
-    files: 5, // max 5 files
+    files: 5,
   },
   fileFilter: makeAllowedFilter(
     [
@@ -78,6 +77,6 @@ const uploadQuoteFiles = quoteUpload.array("files", 5);
 
 module.exports = {
   uploadPortfolioImage,
-  uploadServiceImage,   // ✅ NEW EXPORT
+  uploadServiceImage, // ✅ IMPORTANT: now exists
   uploadQuoteFiles,
 };
