@@ -30,7 +30,23 @@ const portfolioUpload = multer({
 const uploadPortfolioImage = portfolioUpload.single("image");
 
 /* ======================================================
-   2) QUOTES (Cloudinary files: images + pdf + docs) -> memoryStorage (buffer)
+   2) SERVICES (Hero Image - Cloudinary) -> memoryStorage (buffer)
+   ✅ Same as portfolio
+====================================================== */
+const serviceUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
+  fileFilter: makeAllowedFilter(
+    ["image/jpeg", "image/png", "image/webp", "image/gif", "image/svg+xml"],
+    "Only JPG, PNG, WebP, GIF, SVG images are allowed."
+  ),
+});
+
+// field name must match frontend: fd.append("image", image)
+const uploadServiceImage = serviceUpload.single("image");
+
+/* ======================================================
+   3) QUOTES (Cloudinary files: images + pdf + docs) -> memoryStorage (buffer)
    ✅ Must be memoryStorage because your controller uses f.buffer
 ====================================================== */
 const quoteUpload = multer({
@@ -62,5 +78,6 @@ const uploadQuoteFiles = quoteUpload.array("files", 5);
 
 module.exports = {
   uploadPortfolioImage,
+  uploadServiceImage,   // ✅ NEW EXPORT
   uploadQuoteFiles,
 };

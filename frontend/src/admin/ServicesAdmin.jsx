@@ -21,6 +21,7 @@ import {
   Printer,
   Users,
   Award,
+  Image as ImageIcon,
 } from "lucide-react";
 
 const CATEGORIES = [
@@ -52,13 +53,17 @@ export default function ServicesAdmin() {
   const [editId, setEditId] = useState(null);
   const [saving, setSaving] = useState(false);
 
+  // ✅ NEW: hero image file + preview
+  const [heroFile, setHeroFile] = useState(null);
+  const [heroPreview, setHeroPreview] = useState("");
+  const [existingHero, setExistingHero] = useState(""); // when editing
+
   const load = async (showRefresh = false) => {
     setErr("");
     if (showRefresh) setIsRefreshing(true);
     else setLoading(true);
 
     try {
-      // ✅ FIXED: adminHttp already points to /api/admin
       const { data } = await adminHttp.get("/services");
       setItems(Array.isArray(data) ? data : []);
     } catch (e) {
@@ -81,6 +86,11 @@ export default function ServicesAdmin() {
     setFeatured(false);
     setActive(true);
     setEditId(null);
+
+    // ✅ reset image
+    setHeroFile(null);
+    setHeroPreview("");
+    setExistingHero("");
   };
 
   const startEdit = (x) => {
@@ -90,7 +100,28 @@ export default function ServicesAdmin() {
     setDescription(x.description || "");
     setFeatured(!!x.featured);
     setActive(!!x.active);
+
+    // ✅ show current image (if exists)
+    setExistingHero(x.heroImage || "");
+    setHeroFile(null);
+    setHeroPreview("");
+
     window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const onPickHero = (file) => {
+    setHeroFile(file || null);
+    if (!file) {
+      setHeroPreview("");
+      return;
+    }
+    const url = URL.createObjectURL(file);
+    setHeroPreview(url);
+  };
+
+  const removeNewHero = () => {
+    setHeroFile(null);
+    setHeroPreview("");
   };
 
   const submit = async (e) => {
@@ -101,14 +132,25 @@ export default function ServicesAdmin() {
 
     setSaving(true);
     try {
-      const payload = { name, category, description, featured, active };
+      // ✅ MUST use FormData now (because backend expects multipart for image)
+      const fd = new FormData();
+      fd.append("name", name);
+      fd.append("category", category);
+      fd.append("description", description);
+      fd.append("featured", String(featured));
+      fd.append("active", String(active));
+
+      // ✅ image field name MUST be "image" (matches uploadServiceImage)
+      if (heroFile) fd.append("image", heroFile);
 
       if (editId) {
-        // ✅ FIXED path
-        await adminHttp.put(`/services/${editId}`, payload);
+        await adminHttp.put(`/services/${editId}`, fd, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
       } else {
-        // ✅ FIXED path
-        await adminHttp.post("/services", payload);
+        await adminHttp.post("/services", fd, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
       }
 
       await load();
@@ -123,7 +165,6 @@ export default function ServicesAdmin() {
   const del = async (id) => {
     if (!confirm("Are you sure you want to delete this service? This action cannot be undone.")) return;
     try {
-      // ✅ FIXED path
       await adminHttp.delete(`/services/${id}`);
       setItems((p) => p.filter((x) => x._id !== id));
     } catch (e) {
@@ -170,9 +211,7 @@ export default function ServicesAdmin() {
             Services Management
           </div>
           <h1 className="text-3xl font-bold text-slate-900">Printing Services</h1>
-          <p className="text-slate-600 mt-2">
-            Manage and organize services shown to customers
-          </p>
+          <p className="text-slate-600 mt-2">Manage and organize services shown to customers</p>
         </div>
 
         <div className="flex items-center gap-3">
@@ -183,9 +222,7 @@ export default function ServicesAdmin() {
           >
             <RefreshCw
               className={`w-4 h-4 ${
-                isRefreshing
-                  ? "animate-spin"
-                  : "group-hover:rotate-180 transition-transform duration-500"
+                isRefreshing ? "animate-spin" : "group-hover:rotate-180 transition-transform duration-500"
               }`}
             />
             {isRefreshing ? "Refreshing..." : "Refresh"}
@@ -217,20 +254,12 @@ export default function ServicesAdmin() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-xl bg-gradient-to-r from-red-600 to-red-500">
-                {editId ? (
-                  <Edit2 className="w-5 h-5 text-white" />
-                ) : (
-                  <Plus className="w-5 h-5 text-white" />
-                )}
+                {editId ? <Edit2 className="w-5 h-5 text-white" /> : <Plus className="w-5 h-5 text-white" />}
               </div>
               <div>
-                <h2 className="text-xl font-bold text-slate-900">
-                  {editId ? "Edit Service" : "Add New Service"}
-                </h2>
+                <h2 className="text-xl font-bold text-slate-900">{editId ? "Edit Service" : "Add New Service"}</h2>
                 <p className="text-sm text-slate-600 mt-1">
-                  {editId
-                    ? "Update existing service details"
-                    : "Create a new service for customers"}
+                  {editId ? "Update existing service details" : "Create a new service for customers"}
                 </p>
               </div>
             </div>
@@ -266,9 +295,7 @@ export default function ServicesAdmin() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-900 mb-2">
-                Category
-              </label>
+              <label className="block text-sm font-medium text-slate-900 mb-2">Category</label>
               <div className="relative">
                 <select
                   className="w-full border border-slate-200 rounded-xl px-4 py-3 appearance-none outline-none focus:ring-2 focus:ring-red-200 focus:border-transparent bg-white"
@@ -285,10 +312,77 @@ export default function ServicesAdmin() {
               </div>
             </div>
 
+            {/* ✅ HERO IMAGE UPLOAD */}
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-slate-900 mb-2">
-                Description
+                Hero Image (Service banner)
               </label>
+
+              <div className="grid md:grid-cols-2 gap-4 items-start">
+                <div className="border border-slate-200 rounded-2xl p-4 bg-slate-50">
+                  <label className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-slate-200 cursor-pointer hover:bg-slate-50 transition">
+                    <ImageIcon className="w-4 h-4" />
+                    <span className="font-semibold text-sm">Choose Image</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => onPickHero(e.target.files?.[0])}
+                    />
+                  </label>
+
+                  <div className="text-xs text-slate-600 mt-2">
+                    JPG/PNG/WebP • Recommended: 1200×600 or 1600×800
+                  </div>
+
+                  {heroFile ? (
+                    <div className="mt-3 flex items-center justify-between gap-3">
+                      <div className="text-xs text-slate-700 truncate">
+                        <span className="font-semibold">Selected:</span> {heroFile.name}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={removeNewHero}
+                        className="text-xs px-3 py-1 rounded-lg border border-slate-200 hover:bg-white"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ) : null}
+                </div>
+
+                {/* Preview */}
+                <div className="border border-slate-200 rounded-2xl overflow-hidden bg-white">
+                  <div className="px-4 py-2 border-b border-slate-100 text-sm font-semibold text-slate-700">
+                    Preview
+                  </div>
+                  <div className="relative h-44 bg-slate-100">
+                    <img
+                      src={
+                        heroPreview ||
+                        existingHero ||
+                        "/images/service-placeholder.jpg"
+                      }
+                      alt="Hero preview"
+                      className="absolute inset-0 w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+                    <div className="absolute bottom-3 left-3 text-white font-bold drop-shadow">
+                      {name || "Service title"}
+                    </div>
+                  </div>
+
+                  {editId && existingHero && !heroPreview ? (
+                    <div className="px-4 py-3 text-xs text-slate-600">
+                      Currently showing saved image. Select a new image to replace it.
+                    </div>
+                  ) : null}
+                </div>
+              </div>
+            </div>
+
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-slate-900 mb-2">Description</label>
               <textarea
                 className="w-full border border-slate-200 rounded-xl px-4 py-3 min-h-[120px] outline-none focus:ring-2 focus:ring-red-200 focus:border-transparent"
                 value={description}
@@ -307,16 +401,8 @@ export default function ServicesAdmin() {
                   checked={featured}
                   onChange={(e) => setFeatured(e.target.checked)}
                 />
-                <div
-                  className={`w-10 h-6 rounded-full transition-colors ${
-                    featured ? "bg-red-600" : "bg-slate-300"
-                  }`}
-                >
-                  <div
-                    className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-transform ${
-                      featured ? "left-5" : "left-1"
-                    }`}
-                  />
+                <div className={`w-10 h-6 rounded-full transition-colors ${featured ? "bg-red-600" : "bg-slate-300"}`}>
+                  <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-transform ${featured ? "left-5" : "left-1"}`} />
                 </div>
               </div>
               <div className="flex items-center gap-2">
@@ -333,24 +419,12 @@ export default function ServicesAdmin() {
                   checked={active}
                   onChange={(e) => setActive(e.target.checked)}
                 />
-                <div
-                  className={`w-10 h-6 rounded-full transition-colors ${
-                    active ? "bg-green-600" : "bg-slate-300"
-                  }`}
-                >
-                  <div
-                    className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-transform ${
-                      active ? "left-5" : "left-1"
-                    }`}
-                  />
+                <div className={`w-10 h-6 rounded-full transition-colors ${active ? "bg-green-600" : "bg-slate-300"}`}>
+                  <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-transform ${active ? "left-5" : "left-1"}`} />
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                {active ? (
-                  <Eye className="w-4 h-4 text-green-600" />
-                ) : (
-                  <EyeOff className="w-4 h-4 text-slate-400" />
-                )}
+                {active ? <Eye className="w-4 h-4 text-green-600" /> : <EyeOff className="w-4 h-4 text-slate-400" />}
                 <span className="font-medium text-slate-900">Active</span>
               </div>
             </label>
@@ -363,14 +437,7 @@ export default function ServicesAdmin() {
             {saving ? (
               <>
                 <svg className="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                  />
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                   <path
                     className="opacity-75"
                     fill="currentColor"
@@ -400,8 +467,7 @@ export default function ServicesAdmin() {
               <div>
                 <h2 className="text-xl font-bold text-slate-900">All Services</h2>
                 <p className="text-sm text-slate-600 mt-1">
-                  {filteredItems.length}{" "}
-                  {filteredItems.length === 1 ? "service" : "services"} found
+                  {filteredItems.length} {filteredItems.length === 1 ? "service" : "services"} found
                 </p>
               </div>
             </div>
@@ -438,7 +504,6 @@ export default function ServicesAdmin() {
         </div>
 
         <div className="p-6">
-          {/* Loading State */}
           {loading && !isRefreshing ? (
             <div className="text-center py-12">
               <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-100 text-red-600 mb-4 animate-pulse">
@@ -449,28 +514,19 @@ export default function ServicesAdmin() {
             </div>
           ) : (
             <>
-              {/* Services Grid */}
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredItems.map((x) => (
-                  <ServiceCard
-                    key={x._id}
-                    service={x}
-                    onEdit={() => startEdit(x)}
-                    onDelete={() => del(x._id)}
-                  />
+                  <ServiceCard key={x._id} service={x} onEdit={() => startEdit(x)} onDelete={() => del(x._id)} />
                 ))}
               </div>
 
-              {/* Empty State */}
               {!loading && filteredItems.length === 0 && (
                 <div className="text-center py-12">
                   <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-slate-100 text-slate-600 mb-4">
                     <Package className="w-8 h-8" />
                   </div>
                   <h3 className="text-xl font-bold text-slate-900">
-                    {search || categoryFilter !== "all"
-                      ? "No Services Found"
-                      : "No Services Yet"}
+                    {search || categoryFilter !== "all" ? "No Services Found" : "No Services Yet"}
                   </h3>
                   <p className="text-slate-600 mt-2 max-w-md mx-auto">
                     {search || categoryFilter !== "all"
@@ -536,14 +592,26 @@ function ServiceCard({ service, onEdit, onDelete }) {
 
   return (
     <div className="group border border-slate-200 rounded-2xl bg-white hover:shadow-md transition-all duration-300 overflow-hidden">
+      {/* ✅ show hero image thumbnail */}
+      <div className="relative h-32 bg-slate-100">
+        <img
+          src={service.heroImage || "/images/service-placeholder.jpg"}
+          alt={service.name}
+          className="absolute inset-0 w-full h-full object-cover"
+          loading="lazy"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/35 to-transparent" />
+        <div className="absolute bottom-2 left-3 text-white font-bold text-sm drop-shadow">
+          {service.name}
+        </div>
+      </div>
+
       {/* Card Header */}
       <div className="p-5 border-b border-slate-100">
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-2">
-              <h3 className="font-bold text-lg text-slate-900 truncate">
-                {service.name}
-              </h3>
+              <h3 className="font-bold text-lg text-slate-900 truncate">{service.name}</h3>
               {service.featured && (
                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 text-xs font-medium">
                   <Star className="w-3 h-3" />
@@ -564,9 +632,7 @@ function ServiceCard({ service, onEdit, onDelete }) {
 
               <span
                 className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${
-                  service.active
-                    ? "bg-green-100 text-green-700"
-                    : "bg-red-100 text-red-700"
+                  service.active ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
                 }`}
               >
                 {service.active ? (
@@ -589,16 +655,11 @@ function ServiceCard({ service, onEdit, onDelete }) {
       {/* Card Body */}
       <div className="p-5">
         {service.description ? (
-          <p className="text-sm text-slate-700 line-clamp-3 leading-relaxed mb-4">
-            {service.description}
-          </p>
+          <p className="text-sm text-slate-700 line-clamp-3 leading-relaxed mb-4">{service.description}</p>
         ) : (
-          <p className="text-sm text-slate-500 italic mb-4">
-            No description provided
-          </p>
+          <p className="text-sm text-slate-500 italic mb-4">No description provided</p>
         )}
 
-        {/* Stats */}
         <div className="flex items-center justify-between text-xs text-slate-500 mb-6">
           <div className="flex items-center gap-1">
             <Users className="w-3 h-3" />

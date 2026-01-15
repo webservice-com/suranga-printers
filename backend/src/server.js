@@ -40,9 +40,6 @@ const allowedOrigins = new Set([
   "http://localhost:8080",
 ]);
 
-// Add FRONTEND_URL from Render env (comma separated)
-// Example:
-// FRONTEND_URL=https://your-site.netlify.app,https://deploy-preview-12--your-site.netlify.app
 if (process.env.FRONTEND_URL) {
   process.env.FRONTEND_URL
     .split(",")
@@ -52,12 +49,10 @@ if (process.env.FRONTEND_URL) {
 }
 
 function isAllowedOrigin(origin) {
-  if (!origin) return true; // Postman / server-to-server
+  if (!origin) return true;
 
-  // Exact match (local + your main Netlify URLs)
   if (allowedOrigins.has(origin)) return true;
 
-  // Allow Netlify previews automatically (*.netlify.app) - HTTPS only
   try {
     const { hostname, protocol } = new URL(origin);
     return protocol === "https:" && hostname.endsWith(".netlify.app");
@@ -77,12 +72,10 @@ const corsConfig = cors({
 });
 
 app.use(corsConfig);
-
-// ✅ IMPORTANT FIX (Render crash): do NOT use "*"
 app.options(/.*/, corsConfig);
 
 /* ======================================================
-   STATIC FILES
+   STATIC FILES (optional; useful for local /uploads)
 ====================================================== */
 const uploadsDir = path.join(__dirname, "..", "uploads");
 app.use("/uploads", express.static(uploadsDir));
