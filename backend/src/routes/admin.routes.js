@@ -1,8 +1,29 @@
+// backend/src/routes/admin.routes.js
 const router = require("express").Router();
 
-const { auth, adminOnly } = require("../middleware/auth");
-const c = require("../controllers/admin.controller");
-const { uploadPortfolioImage, uploadServiceImage } = require("../middleware/upload");
+// ✅ use explicit .js to avoid path mismatch issues on deploy
+const authMod = require("../middleware/auth.js");
+const c = require("../controllers/admin.controller.js");
+const uploadMod = require("../middleware/upload.js");
+
+// ------------------ SAFETY CHECKS (shows real missing handler) ------------------
+function mustBeFn(fn, name) {
+  if (typeof fn !== "function") {
+    throw new Error(`❌ Route handler missing/not a function: ${name}`);
+  }
+}
+
+mustBeFn(c.login, "c.login");
+
+mustBeFn(authMod.auth, "authMod.auth");
+mustBeFn(authMod.adminOnly, "authMod.adminOnly");
+
+mustBeFn(uploadMod.uploadPortfolioImage, "uploadMod.uploadPortfolioImage");
+mustBeFn(uploadMod.uploadServiceImage, "uploadMod.uploadServiceImage");
+
+// Destructure AFTER validation
+const { auth, adminOnly } = authMod;
+const { uploadPortfolioImage, uploadServiceImage } = uploadMod;
 
 /* ======================
    PUBLIC
@@ -14,7 +35,7 @@ router.get("/health", (req, res) => {
 });
 
 /* ======================
-   PROTECTED (ALL BELOW)
+   PROTECTED
 ====================== */
 router.use(auth, adminOnly);
 
