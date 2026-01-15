@@ -7,11 +7,8 @@ const ServiceSchema = new mongoose.Schema(
     category: { type: String, default: "General", trim: true },
     description: { type: String, default: "", trim: true },
 
-    // ✅ NEW: hero image (Cloudinary URL)
-    heroImage: { type: String, default: "", trim: true },
-
-    // ✅ NEW: hero image public id (for delete/replace)
-    heroImagePublicId: { type: String, default: "", trim: true },
+    heroImage: { type: String, default: "" },
+    heroImagePublicId: { type: String, default: "" },
 
     featured: { type: Boolean, default: false },
     active: { type: Boolean, default: true },
